@@ -991,7 +991,7 @@ int main(int argc, char **argv)
 		for (i = 0; i < MAX_SLAVES; i++) {
 			if (active_renderd_section_num != i && config_slaves[i].num_threads != 0) {
 				g_logger(G_LOG_LEVEL_DEBUG, "Freeing unused renderd config section %i: %s", i, config_slaves[i].name);
-				free_renderd_section(config_slaves[i]);
+				free_renderd_section(&config_slaves[i]);
 			}
 		}
 	}

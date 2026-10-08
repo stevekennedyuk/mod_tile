@@ -104,52 +104,55 @@ static void process_config_string(const dictionary *ini, const char *section, co
 	free(key);
 }
 
-void free_map_section(xmlconfigitem map_section)
+void free_map_section(xmlconfigitem *map_section)
 {
-	free((void *)map_section.attribution);
-	free((void *)map_section.cors);
-	free((void *)map_section.description);
-	free((void *)map_section.file_extension);
-	free((void *)map_section.host);
-	free((void *)map_section.htcpip);
-	free((void *)map_section.mime_type);
-	free((void *)map_section.output_format);
-	free((void *)map_section.parameterization);
-	free((void *)map_section.server_alias);
-	free((void *)map_section.tile_dir);
-	free((void *)map_section.xmlfile);
-	free((void *)map_section.xmlname);
-	free((void *)map_section.xmluri);
-	bzero(&map_section, sizeof(xmlconfigitem));
+	free((void *)map_section->attribution);
+	free((void *)map_section->cors);
+	free((void *)map_section->description);
+	free((void *)map_section->file_extension);
+	free((void *)map_section->host);
+	free((void *)map_section->htcpip);
+	free((void *)map_section->mime_type);
+	free((void *)map_section->output_format);
+	free((void *)map_section->parameterization);
+	free((void *)map_section->server_alias);
+	free((void *)map_section->tile_dir);
+	free((void *)map_section->xmlfile);
+	free((void *)map_section->xmlname);
+	free((void *)map_section->xmluri);
+	memset(map_section, 0, sizeof(xmlconfigitem));
 }
 
 void free_map_sections(xmlconfigitem *map_sections)
 {
 	for (int i = 0; i < XMLCONFIGS_MAX; i++) {
 		if (map_sections[i].xmlname != NULL) {
-			free_map_section(map_sections[i]);
+			free_map_section(&map_sections[i]);
 		}
 	}
 }
 
-void free_renderd_section(renderd_config renderd_section)
+// Takes a pointer so that the caller's section is cleared afterwards; it was previously
+// passed by value, which only cleared a copy and led to the strings being freed twice
+// (once for unused sections at startup and again at shutdown).
+void free_renderd_section(renderd_config *renderd_section)
 {
-	free((void *)renderd_section.iphostname);
-	free((void *)renderd_section.mapnik_font_dir);
-	free((void *)renderd_section.mapnik_plugins_dir);
-	free((void *)renderd_section.name);
-	free((void *)renderd_section.pid_filename);
-	free((void *)renderd_section.socketname);
-	free((void *)renderd_section.stats_filename);
-	free((void *)renderd_section.tile_dir);
-	bzero(&renderd_section, sizeof(renderd_config));
+	free((void *)renderd_section->iphostname);
+	free((void *)renderd_section->mapnik_font_dir);
+	free((void *)renderd_section->mapnik_plugins_dir);
+	free((void *)renderd_section->name);
+	free((void *)renderd_section->pid_filename);
+	free((void *)renderd_section->socketname);
+	free((void *)renderd_section->stats_filename);
+	free((void *)renderd_section->tile_dir);
+	memset(renderd_section, 0, sizeof(renderd_config));
 }
 
 void free_renderd_sections(renderd_config *renderd_sections)
 {
 	for (int i = 0; i < MAX_SLAVES; i++) {
 		if (renderd_sections[i].num_threads != 0) {
-			free_renderd_section(renderd_sections[i]);
+			free_renderd_section(&renderd_sections[i]);
 		}
 	}
 }
