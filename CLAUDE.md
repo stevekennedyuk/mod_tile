@@ -11,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Build System
 
-CMake is the primary build system (Autotools is the alternative). The project requires C99 and C++11 (C++17 for Mapnik 4+).
+CMake is the primary build system; Autotools still works but is deprecated (`configure.ac` reads the version from `CMakeLists.txt`). The project requires C99 and C++14 (C++17 for Mapnik 4+).
 
 ### Ubuntu dependencies
 
@@ -27,7 +27,7 @@ sudo apt --no-install-recommends --yes install \
 ```sh
 cmake --preset dev && cmake --build --preset dev && ctest --preset dev   # Debug + tests + warnings
 cmake --preset asan && cmake --build --preset asan && ctest --preset asan  # ASan + UBSan
-cmake --preset tsan && cmake --build --preset tsan && ctest --preset tsan  # ThreadSanitizer
+cmake --preset tsan && cmake --build --preset tsan && ctest --preset tsan  # ThreadSanitizer (unit tests only)
 ```
 
 Presets build into `build/<preset>/`. `config.h` is generated in the build tree (`<build>/includes/config.h`), so multiple build directories can coexist.
@@ -85,7 +85,11 @@ Shared sources are compiled once into internal OBJECT libraries in `src/CMakeLis
 
 ### Linting / Static Analysis
 
-CI runs `flawfinder` for security scanning (`.github/workflows/flawfinder-analysis.yml`) and a lint workflow (`.github/workflows/lint.yml`).
+CI runs `flawfinder` for security scanning (`.github/workflows/flawfinder-analysis.yml`), a lint workflow (`.github/workflows/lint.yml`: astyle, cmakelint, prettier) and `.github/workflows/sanitizers-and-warnings.yml`:
+
+- **Warnings** — GCC and Clang with `ENABLE_WARNINGS` + `ENABLE_WERROR`; the code base builds warning-free, keep it that way. `g_logger()` is declared with `G_GNUC_PRINTF`, so format/argument mismatches are compile errors.
+- **ASan + UBSan** — full suite including the Apache/renderd integration tests. `tests/CMakeLists.txt` puts the ASan runtime in `LD_PRELOAD` so the system `httpd` can load the instrumented `mod_tile.so`. Services write sanitizer reports to `build/tests/logs`, which the job also checks.
+- **TSan** — unit test executables only (TSan cannot be preloaded into an uninstrumented `httpd`). `tests/tsan.supp` suppresses a lock-order report inside GDAL.
 
 ## Architecture
 
@@ -137,7 +141,7 @@ Tiles are stored in 8×8 metatile bundles (`METATILE = 8`) in a hashed directory
 
 ## Tests
 
-Tests use **Catch2** (v2.13.10, vendored in `tests/catch/`) and live in `tests/`. The main suites:
+Tests use **Catch2** (v3.16.0 amalgamated build, vendored in `tests/catch/`; see its README to update) and live in `tests/`. Matchers use the v3 names, e.g. `Catch::Matchers::ContainsSubstring`. The main suites:
 
 - `gen_tile_test.cpp` — Mapnik rendering pipeline (largest suite)
 - `renderd_config_test.cpp` — configuration parsing
@@ -153,8 +157,7 @@ Test infrastructure uses `tests/httpd.conf.in` and `tests/renderd.conf.in` templ
 - **`src/renderd.c` / `src/mod_tile.c` — `bzero` usage** — several files use the deprecated `bzero()` instead of `memset(..., 0, ...)`. Functionally equivalent on Linux but not strictly portable.
 - **`src/gen_tile.cpp:render_thread` — startup `strndup`/`malloc` leaks** — `output_format`, `xmlfile`, `xmlname` (`strndup`), `prj` (`malloc`), and `store` (`init_storage_backend`) are allocated once per thread at startup and never freed. The render thread runs in an infinite loop and never exits, so these do not accumulate in practice.
 - **`src/store_ro_composite.c` — `connection_string_secondary` (strdup) not freed on late error paths** — after the `strdup` on the secondary connection string, several subsequent error paths (store_primary init failure, store_secondary init failure) free it, but if `store_secondary` init succeeds and a later step fails the pointer may still leak depending on the code path. Low risk: composite storage is rarely used and init failures abort the process.
-
-- **`src/renderd.c` TCP listener is IPv6-only** — `socket(PF_INET6, ...)` with no IPv4 fallback, so renderd cannot listen on TCP on hosts/containers with IPv6 disabled (the `*_file_1` integration tests fail in such environments). Should use `getaddrinfo()` with `AF_UNSPEC`.
+- **`src/renderd.c` TCP listener binds the wildcard address** — it listens on all addresses (dual-stack IPv6, falling back to IPv4 when IPv6 is unavailable) regardless of `iphostname`, which clients use to connect. Binding to `iphostname` would be a behaviour change for existing configs.
 - **Process-lifetime allocations** — LeakSanitizer reports small one-shot leaks at exit in `init_storage_*` and the `render_*` utilities' `main()`; harmless but noisy. Run the asan preset with `detect_leaks=0` (the test preset does this).
 
 ## Parameterized rendering cache
