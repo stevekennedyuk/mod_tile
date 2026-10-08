@@ -469,7 +469,7 @@ TEST_CASE("renderd_config config parser", "specific testing")
 	SECTION("renderd.conf with overlapping URIs", "should return 7") {
 		std::string map0_uri = GENERATE("/", "/map1/", "/map2/");
 
-		std::string renderd_conf = std::tmpnam(nullptr);
+		std::string renderd_conf = make_temp_file();
 		std::ofstream renderd_conf_file;
 		renderd_conf_file.open(renderd_conf);
 		renderd_conf_file << "[mapnik]\n[renderd]\n";
@@ -486,11 +486,11 @@ TEST_CASE("renderd_config config parser", "specific testing")
 		int status = run_command(test_binary, argv);
 		std::remove(renderd_conf.c_str());
 		REQUIRE(WEXITSTATUS(status) == 7);
-		REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("Specified URI path ('" + map0_uri + "' in map section 'map0') must not be the parent of any subsequent map config section's URI path, e.g., '" + map0_uri + "1/' in map section 'map1'"));
+		REQUIRE_THAT(err_log_lines, Catch::Matchers::ContainsSubstring("Specified URI path ('" + map0_uri + "' in map section 'map0') must not be the parent of any subsequent map config section's URI path, e.g., '" + map0_uri + "1/' in map section 'map1'"));
 	}
 
 	SECTION("renderd.conf with blank URIs", "should return 7") {
-		std::string renderd_conf = std::tmpnam(nullptr);
+		std::string renderd_conf = make_temp_file();
 		std::ofstream renderd_conf_file;
 		renderd_conf_file.open(renderd_conf);
 		renderd_conf_file << "[mapnik]\n[renderd]\n";
@@ -508,7 +508,7 @@ TEST_CASE("renderd_config config parser", "specific testing")
 		int status = run_command(test_binary, argv);
 		std::remove(renderd_conf.c_str());
 		REQUIRE(WEXITSTATUS(status) == 7);
-		REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("Specified URI path ('/' in map section 'map1') must not be the parent of any subsequent map config section's URI path, e.g., '/2/' in map section 'map2'"));
+		REQUIRE_THAT(err_log_lines, Catch::Matchers::ContainsSubstring("Specified URI path ('/' in map section 'map1') must not be the parent of any subsequent map config section's URI path, e.g., '/2/' in map section 'map2'"));
 	}
 }
 
