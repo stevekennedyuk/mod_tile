@@ -86,6 +86,11 @@ jobs:
       - name: Install dependencies
         uses: ./.github/actions/dependencies/install
 
+      # Unlike in containers, installing the packages on the host starts their system services,
+      # whose default ports (e.g. memcached on 11211) collide with the test services
+      - name: Stop system `apache2` & `memcached` services
+        run: sudo systemctl stop apache2 memcached || true
+
       - name: Build `mod_tile`
         uses: ./.github/actions/cmake/build
 
