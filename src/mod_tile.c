@@ -208,7 +208,7 @@ static int socket_init(request_rec *r)
 	struct sockaddr_un addr;
 	char portnum[16];
 	char ipstring[INET6_ADDRSTRLEN];
-	int fd, s;
+	int fd = -1, s;
 	tile_server_conf *scfg = (tile_server_conf *)ap_get_module_config(r->server->module_config, &tile_module);
 
 	if (scfg->renderd_socket_port > 0) {
@@ -2280,7 +2280,7 @@ static const char *mod_tile_enable_throttling_xforward(cmd_parms *cmd, void *mco
 {
 	ap_log_perror(APLOG_MARK, APLOG_DEBUG, APR_SUCCESS, cmd->pool, "Setting %s argument to %s", cmd->directive->directive, enable_tile_throttling_xforward_string);
 	const char *enable_tile_throttling_xforward_result;
-	int enable_tile_throttling_xforward;
+	int enable_tile_throttling_xforward = 0;
 	tile_server_conf *scfg = (tile_server_conf *)ap_get_module_config(cmd->server->module_config, &tile_module);
 	enable_tile_throttling_xforward_result = arg_to_int(cmd, enable_tile_throttling_xforward_string, &enable_tile_throttling_xforward, cmd->directive->directive);
 
@@ -2323,7 +2323,7 @@ static const char *mod_tile_enable_dirty_url(cmd_parms *cmd, void *mconfig, int 
 static const char *mod_tile_delaypool_tiles_config(cmd_parms *cmd, void *mconfig, const char *delaypool_tile_size_string, const char *top_up_tile_rate_string)
 {
 	const char *delaypool_tile_size_result, *top_up_tile_rate_result;
-	double top_up_tile_rate;
+	double top_up_tile_rate = 0;
 	tile_server_conf *scfg = (tile_server_conf *)ap_get_module_config(cmd->server->module_config, &tile_module);
 	delaypool_tile_size_result = arg_to_int(cmd, delaypool_tile_size_string, &scfg->delaypool_tile_size, "ModTileThrottlingTiles first");
 
@@ -2337,6 +2337,12 @@ static const char *mod_tile_delaypool_tiles_config(cmd_parms *cmd, void *mconfig
 		return top_up_tile_rate_result;
 	}
 
+	// The rate is stored as whole microseconds per tile and later used as a divisor, so it
+	// must be > 0 and at most one per microsecond (a larger rate would truncate to 0)
+	if (!(top_up_tile_rate > 0) || (top_up_tile_rate > APR_USEC_PER_SEC)) {
+		return "ModTileThrottlingTiles second argument (top up rate) must be greater than 0 and at most 1000000";
+	}
+
 	/*Convert topup rate into microseconds per tile */
 	scfg->delaypool_tile_rate = (APR_USEC_PER_SEC / top_up_tile_rate);
 	return NULL;
@@ -2345,7 +2351,7 @@ static const char *mod_tile_delaypool_tiles_config(cmd_parms *cmd, void *mconfig
 static const char *mod_tile_delaypool_render_config(cmd_parms *cmd, void *mconfig, const char *delaypool_render_size_string, const char *top_up_render_rate_string)
 {
 	const char *delaypool_render_size_result, *top_up_render_rate_result;
-	double top_up_render_rate;
+	double top_up_render_rate = 0;
 	tile_server_conf *scfg = (tile_server_conf *)ap_get_module_config(cmd->server->module_config, &tile_module);
 	delaypool_render_size_result = arg_to_int(cmd, delaypool_render_size_string, &scfg->delaypool_render_size, "ModTileThrottlingRenders first");
 
@@ -2357,6 +2363,12 @@ static const char *mod_tile_delaypool_render_config(cmd_parms *cmd, void *mconfi
 
 	if (top_up_render_rate_result != NULL) {
 		return top_up_render_rate_result;
+	}
+
+	// The rate is stored as whole microseconds per render and later used as a divisor, so it
+	// must be > 0 and at most one per microsecond (a larger rate would truncate to 0)
+	if (!(top_up_render_rate > 0) || (top_up_render_rate > APR_USEC_PER_SEC)) {
+		return "ModTileThrottlingRenders second argument (top up rate) must be greater than 0 and at most 1000000";
 	}
 
 	/*Convert topup rate into microseconds per tile */
