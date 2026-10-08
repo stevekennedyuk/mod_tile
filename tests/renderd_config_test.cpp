@@ -19,7 +19,7 @@
 #include <string>
 #include <sys/un.h>
 
-#include "catch/catch.hpp"
+#include "catch/catch_amalgamated.hpp"
 #include "catch_test_common.hpp"
 #include "config.h"
 #include "render_config.h"
@@ -57,8 +57,8 @@ TEST_CASE("renderd_config min/max int", "min/max int generator testing")
 
 		int status = run_command(test_binary, argv);
 		REQUIRE(WEXITSTATUS(status) == 1);
-		REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("must be >="));
-		REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("(-1 was provided)"));
+		REQUIRE_THAT(err_log_lines, Catch::Matchers::ContainsSubstring("must be >="));
+		REQUIRE_THAT(err_log_lines, Catch::Matchers::ContainsSubstring("(-1 was provided)"));
 	}
 
 	SECTION(option + " option is float", "should return 1") {
@@ -66,7 +66,7 @@ TEST_CASE("renderd_config min/max int", "min/max int generator testing")
 
 		int status = run_command(test_binary, argv);
 		REQUIRE(WEXITSTATUS(status) == 1);
-		REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("must be an integer (1.23456789 was provided)"));
+		REQUIRE_THAT(err_log_lines, Catch::Matchers::ContainsSubstring("must be an integer (1.23456789 was provided)"));
 	}
 
 	SECTION(option + " option is not an integer", "should return 1") {
@@ -74,7 +74,7 @@ TEST_CASE("renderd_config min/max int", "min/max int generator testing")
 
 		int status = run_command(test_binary, argv);
 		REQUIRE(WEXITSTATUS(status) == 1);
-		REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("must be an integer (invalid was provided)"));
+		REQUIRE_THAT(err_log_lines, Catch::Matchers::ContainsSubstring("must be an integer (invalid was provided)"));
 	}
 }
 
@@ -89,7 +89,7 @@ TEST_CASE("renderd_config min/max double lat generator", "min/max double generat
 
 		int status = run_command(test_binary, argv);
 		REQUIRE(WEXITSTATUS(status) == 1);
-		REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("must be <= 85.051100 (85.151100 was provided)"));
+		REQUIRE_THAT(err_log_lines, Catch::Matchers::ContainsSubstring("must be <= 85.051100 (85.151100 was provided)"));
 	}
 
 	SECTION(option + " option is too small", "should return 1") {
@@ -97,7 +97,7 @@ TEST_CASE("renderd_config min/max double lat generator", "min/max double generat
 
 		int status = run_command(test_binary, argv);
 		REQUIRE(WEXITSTATUS(status) == 1);
-		REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("must be >= -85.051100 (-85.151100 was provided)"));
+		REQUIRE_THAT(err_log_lines, Catch::Matchers::ContainsSubstring("must be >= -85.051100 (-85.151100 was provided)"));
 	}
 
 	SECTION(option + " option is not a double", "should return 1") {
@@ -105,7 +105,7 @@ TEST_CASE("renderd_config min/max double lat generator", "min/max double generat
 
 		int status = run_command(test_binary, argv);
 		REQUIRE(WEXITSTATUS(status) == 1);
-		REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("must be a double (invalid was provided)"));
+		REQUIRE_THAT(err_log_lines, Catch::Matchers::ContainsSubstring("must be a double (invalid was provided)"));
 	}
 
 	SECTION(option + " option is positive with --help", "should return 0") {
@@ -141,7 +141,7 @@ TEST_CASE("renderd_config min/max double lon generator", "min/max double generat
 
 		int status = run_command(test_binary, argv);
 		REQUIRE(WEXITSTATUS(status) == 1);
-		REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("must be <= 180.000000 (180.100000 was provided)"));
+		REQUIRE_THAT(err_log_lines, Catch::Matchers::ContainsSubstring("must be <= 180.000000 (180.100000 was provided)"));
 	}
 
 	SECTION(option + " option is too small", "should return 1") {
@@ -149,7 +149,7 @@ TEST_CASE("renderd_config min/max double lon generator", "min/max double generat
 
 		int status = run_command(test_binary, argv);
 		REQUIRE(WEXITSTATUS(status) == 1);
-		REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("must be >= -180.000000 (-180.100000 was provided)"));
+		REQUIRE_THAT(err_log_lines, Catch::Matchers::ContainsSubstring("must be >= -180.000000 (-180.100000 was provided)"));
 	}
 
 	SECTION(option + " option is not a double", "should return 1") {
@@ -157,7 +157,7 @@ TEST_CASE("renderd_config min/max double lon generator", "min/max double generat
 
 		int status = run_command(test_binary, argv);
 		REQUIRE(WEXITSTATUS(status) == 1);
-		REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("must be a double (invalid was provided)"));
+		REQUIRE_THAT(err_log_lines, Catch::Matchers::ContainsSubstring("must be a double (invalid was provided)"));
 	}
 
 	SECTION(option + " option is positive with --help", "should return 0") {
@@ -202,7 +202,7 @@ TEST_CASE("renderd_config config parser", "specific testing")
 		int status = run_command(test_binary, argv);
 		std::remove(renderd_conf.c_str());
 		REQUIRE(WEXITSTATUS(status) == 7);
-		REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("Can't handle more than " + std::to_string(XMLCONFIGS_MAX) + " map config sections"));
+		REQUIRE_THAT(err_log_lines, Catch::Matchers::ContainsSubstring("Can't handle more than " + std::to_string(XMLCONFIGS_MAX) + " map config sections"));
 	}
 
 	SECTION("renderd.conf without map sections", "should return 1") {
@@ -217,7 +217,7 @@ TEST_CASE("renderd_config config parser", "specific testing")
 		int status = run_command(test_binary, argv);
 		std::remove(renderd_conf.c_str());
 		REQUIRE(WEXITSTATUS(status) == 1);
-		REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("No map config sections were found in file: " + renderd_conf));
+		REQUIRE_THAT(err_log_lines, Catch::Matchers::ContainsSubstring("No map config sections were found in file: " + renderd_conf));
 	}
 
 	SECTION("renderd.conf without mapnik section", "should return 1") {
@@ -232,7 +232,7 @@ TEST_CASE("renderd_config config parser", "specific testing")
 		int status = run_command(test_binary, argv);
 		std::remove(renderd_conf.c_str());
 		REQUIRE(WEXITSTATUS(status) == 1);
-		REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("No mapnik config section was found in file: " + renderd_conf));
+		REQUIRE_THAT(err_log_lines, Catch::Matchers::ContainsSubstring("No mapnik config section was found in file: " + renderd_conf));
 	}
 
 	SECTION("renderd.conf with invalid renderd sections", "should return 7") {
@@ -249,7 +249,7 @@ TEST_CASE("renderd_config config parser", "specific testing")
 		int status = run_command(test_binary, argv);
 		std::remove(renderd_conf.c_str());
 		REQUIRE(WEXITSTATUS(status) == 7);
-		REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("Invalid renderd section name: " + renderd_conf_renderd_section_name));
+		REQUIRE_THAT(err_log_lines, Catch::Matchers::ContainsSubstring("Invalid renderd section name: " + renderd_conf_renderd_section_name));
 	}
 
 	SECTION("renderd.conf with too many renderd sections", "should return 7") {
@@ -269,7 +269,7 @@ TEST_CASE("renderd_config config parser", "specific testing")
 		int status = run_command(test_binary, argv);
 		std::remove(renderd_conf.c_str());
 		REQUIRE(WEXITSTATUS(status) == 7);
-		REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("Can't handle more than " + std::to_string(MAX_SLAVES) + " renderd config sections"));
+		REQUIRE_THAT(err_log_lines, Catch::Matchers::ContainsSubstring("Can't handle more than " + std::to_string(MAX_SLAVES) + " renderd config sections"));
 	}
 
 	SECTION("renderd.conf without renderd sections", "should return 1") {
@@ -284,7 +284,7 @@ TEST_CASE("renderd_config config parser", "specific testing")
 		int status = run_command(test_binary, argv);
 		std::remove(renderd_conf.c_str());
 		REQUIRE(WEXITSTATUS(status) == 1);
-		REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("No renderd config sections were found in file: " + renderd_conf));
+		REQUIRE_THAT(err_log_lines, Catch::Matchers::ContainsSubstring("No renderd config sections were found in file: " + renderd_conf));
 	}
 
 	SECTION("renderd.conf map section scale too small", "should return 7") {
@@ -300,7 +300,7 @@ TEST_CASE("renderd_config config parser", "specific testing")
 		int status = run_command(test_binary, argv);
 		std::remove(renderd_conf.c_str());
 		REQUIRE(WEXITSTATUS(status) == 7);
-		REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("Specified scale factor (0.000000) is too small, must be greater than or equal to 0.100000."));
+		REQUIRE_THAT(err_log_lines, Catch::Matchers::ContainsSubstring("Specified scale factor (0.000000) is too small, must be greater than or equal to 0.100000."));
 	}
 
 	SECTION("renderd.conf map section scale too large", "should return 7") {
@@ -316,7 +316,7 @@ TEST_CASE("renderd_config config parser", "specific testing")
 		int status = run_command(test_binary, argv);
 		std::remove(renderd_conf.c_str());
 		REQUIRE(WEXITSTATUS(status) == 7);
-		REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("Specified scale factor (8.100000) is too large, must be less than or equal to 8.000000."));
+		REQUIRE_THAT(err_log_lines, Catch::Matchers::ContainsSubstring("Specified scale factor (8.100000) is too large, must be less than or equal to 8.000000."));
 	}
 
 	SECTION("renderd.conf map section maxzoom too small", "should return 7") {
@@ -332,7 +332,7 @@ TEST_CASE("renderd_config config parser", "specific testing")
 		int status = run_command(test_binary, argv);
 		std::remove(renderd_conf.c_str());
 		REQUIRE(WEXITSTATUS(status) == 7);
-		REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("Specified max zoom (-1) is too small, must be greater than or equal to 0."));
+		REQUIRE_THAT(err_log_lines, Catch::Matchers::ContainsSubstring("Specified max zoom (-1) is too small, must be greater than or equal to 0."));
 	}
 
 	SECTION("renderd.conf map section maxzoom too large", "should return 7") {
@@ -348,7 +348,7 @@ TEST_CASE("renderd_config config parser", "specific testing")
 		int status = run_command(test_binary, argv);
 		std::remove(renderd_conf.c_str());
 		REQUIRE(WEXITSTATUS(status) == 7);
-		REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("Specified max zoom (" + std::to_string(MAX_ZOOM + 1) + ") is too large, must be less than or equal to " + std::to_string(MAX_ZOOM) + "."));
+		REQUIRE_THAT(err_log_lines, Catch::Matchers::ContainsSubstring("Specified max zoom (" + std::to_string(MAX_ZOOM + 1) + ") is too large, must be less than or equal to " + std::to_string(MAX_ZOOM) + "."));
 	}
 
 	SECTION("renderd.conf map section minzoom too small", "should return 7") {
@@ -364,7 +364,7 @@ TEST_CASE("renderd_config config parser", "specific testing")
 		int status = run_command(test_binary, argv);
 		std::remove(renderd_conf.c_str());
 		REQUIRE(WEXITSTATUS(status) == 7);
-		REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("Specified min zoom (-1) is too small, must be greater than or equal to 0."));
+		REQUIRE_THAT(err_log_lines, Catch::Matchers::ContainsSubstring("Specified min zoom (-1) is too small, must be greater than or equal to 0."));
 	}
 
 	SECTION("renderd.conf map section minzoom too large", "should return 7") {
@@ -380,7 +380,7 @@ TEST_CASE("renderd_config config parser", "specific testing")
 		int status = run_command(test_binary, argv);
 		std::remove(renderd_conf.c_str());
 		REQUIRE(WEXITSTATUS(status) == 7);
-		REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("Specified min zoom (" + std::to_string(MAX_ZOOM + 1) + ") is larger than max zoom (" + std::to_string(MAX_ZOOM) + ")."));
+		REQUIRE_THAT(err_log_lines, Catch::Matchers::ContainsSubstring("Specified min zoom (" + std::to_string(MAX_ZOOM + 1) + ") is larger than max zoom (" + std::to_string(MAX_ZOOM) + ")."));
 	}
 
 	SECTION("renderd.conf map section type has too few parts", "should return 7") {
@@ -398,7 +398,7 @@ TEST_CASE("renderd_config config parser", "specific testing")
 		int status = run_command(test_binary, argv);
 		std::remove(renderd_conf.c_str());
 		REQUIRE(WEXITSTATUS(status) == 7);
-		REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("Specified type (" + renderd_conf_map_type + ") has too few parts, there must be at least 2, e.g., 'png image/png'."));
+		REQUIRE_THAT(err_log_lines, Catch::Matchers::ContainsSubstring("Specified type (" + renderd_conf_map_type + ") has too few parts, there must be at least 2, e.g., 'png image/png'."));
 	}
 
 	SECTION("renderd.conf map section type has too many parts", "should return 7") {
@@ -416,7 +416,7 @@ TEST_CASE("renderd_config config parser", "specific testing")
 		int status = run_command(test_binary, argv);
 		std::remove(renderd_conf.c_str());
 		REQUIRE(WEXITSTATUS(status) == 7);
-		REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("Specified type (" + renderd_conf_map_type + ") has too many parts, there must be no more than 3, e.g., 'png image/png png256'."));
+		REQUIRE_THAT(err_log_lines, Catch::Matchers::ContainsSubstring("Specified type (" + renderd_conf_map_type + ") has too many parts, there must be no more than 3, e.g., 'png image/png png256'."));
 	}
 
 	SECTION("renderd.conf renderd section socketname is too long", "should return 7") {
@@ -435,7 +435,7 @@ TEST_CASE("renderd_config config parser", "specific testing")
 		int status = run_command(test_binary, argv);
 		std::remove(renderd_conf.c_str());
 		REQUIRE(WEXITSTATUS(status) == 7);
-		REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("Specified socketname (" + renderd_socketname + ") exceeds maximum allowed length of " + std::to_string(renderd_socketname_maxlen) + "."));
+		REQUIRE_THAT(err_log_lines, Catch::Matchers::ContainsSubstring("Specified socketname (" + renderd_socketname + ") exceeds maximum allowed length of " + std::to_string(renderd_socketname_maxlen) + "."));
 	}
 
 	SECTION("renderd.conf duplicate renderd section names", "should return 7") {
@@ -451,7 +451,7 @@ TEST_CASE("renderd_config config parser", "specific testing")
 		int status = run_command(test_binary, argv);
 		std::remove(renderd_conf.c_str());
 		REQUIRE(WEXITSTATUS(status) == 7);
-		REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("Duplicate renderd config section names for section 0: renderd0 & renderd"));
+		REQUIRE_THAT(err_log_lines, Catch::Matchers::ContainsSubstring("Duplicate renderd config section names for section 0: renderd0 & renderd"));
 	}
 
 	SECTION("renderd.conf with overlapping URIs", "should return 7") {
@@ -474,7 +474,7 @@ TEST_CASE("renderd_config config parser", "specific testing")
 		int status = run_command(test_binary, argv);
 		std::remove(renderd_conf.c_str());
 		REQUIRE(WEXITSTATUS(status) == 7);
-		REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("Specified URI path ('" + map0_uri + "' in map section 'map0') must not be the parent of any subsequent map config section's URI path, e.g., '" + map0_uri + "1/' in map section 'map1'"));
+		REQUIRE_THAT(err_log_lines, Catch::Matchers::ContainsSubstring("Specified URI path ('" + map0_uri + "' in map section 'map0') must not be the parent of any subsequent map config section's URI path, e.g., '" + map0_uri + "1/' in map section 'map1'"));
 	}
 
 	SECTION("renderd.conf with blank URIs", "should return 7") {
@@ -496,7 +496,7 @@ TEST_CASE("renderd_config config parser", "specific testing")
 		int status = run_command(test_binary, argv);
 		std::remove(renderd_conf.c_str());
 		REQUIRE(WEXITSTATUS(status) == 7);
-		REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("Specified URI path ('/' in map section 'map1') must not be the parent of any subsequent map config section's URI path, e.g., '/2/' in map section 'map2'"));
+		REQUIRE_THAT(err_log_lines, Catch::Matchers::ContainsSubstring("Specified URI path ('/' in map section 'map1') must not be the parent of any subsequent map config section's URI path, e.g., '/2/' in map section 'map2'"));
 	}
 }
 
@@ -537,7 +537,7 @@ TEST_CASE("renderd_config_test_helper", "specific testing")
 
 		int status = run_command(test_binary, argv);
 		REQUIRE(WEXITSTATUS(status) == 1);
-		REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("Active renderd section (" + std::to_string(MAX_SLAVES) + ") must be between 0 and " + std::to_string(MAX_SLAVES - 1) + "."));
+		REQUIRE_THAT(err_log_lines, Catch::Matchers::ContainsSubstring("Active renderd section (" + std::to_string(MAX_SLAVES) + ") must be between 0 and " + std::to_string(MAX_SLAVES - 1) + "."));
 	}
 
 	SECTION("valid renderd.conf file with nonexistent active renderd section", "should return 1") {
@@ -545,7 +545,7 @@ TEST_CASE("renderd_config_test_helper", "specific testing")
 
 		int status = run_command(test_binary, argv);
 		REQUIRE(WEXITSTATUS(status) == 1);
-		REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("Active renderd section (" + std::to_string(MAX_SLAVES - 1) + ") does not exist."));
+		REQUIRE_THAT(err_log_lines, Catch::Matchers::ContainsSubstring("Active renderd section (" + std::to_string(MAX_SLAVES - 1) + ") does not exist."));
 	}
 
 	SECTION("nonexistent renderd.conf file with valid active renderd section", "should return 1") {
@@ -553,7 +553,7 @@ TEST_CASE("renderd_config_test_helper", "specific testing")
 
 		int status = run_command(test_binary, argv);
 		REQUIRE(WEXITSTATUS(status) == 1);
-		REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("Failed to load config file (process_config_file): 'doesnotexist'"));
+		REQUIRE_THAT(err_log_lines, Catch::Matchers::ContainsSubstring("Failed to load config file (process_config_file): 'doesnotexist'"));
 	}
 
 	SECTION("nonexistent renderd.conf file with valid active renderd section (process_renderd_sections)", "should return 1") {
@@ -561,7 +561,7 @@ TEST_CASE("renderd_config_test_helper", "specific testing")
 
 		int status = run_command(test_binary, argv);
 		REQUIRE(WEXITSTATUS(status) == 1);
-		REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("Failed to load config file (process_renderd_sections): 'doesnotexist'"));
+		REQUIRE_THAT(err_log_lines, Catch::Matchers::ContainsSubstring("Failed to load config file (process_renderd_sections): 'doesnotexist'"));
 	}
 
 	SECTION("nonexistent renderd.conf file with valid active renderd section (process_mapnik_section)", "should return 1") {
@@ -569,7 +569,7 @@ TEST_CASE("renderd_config_test_helper", "specific testing")
 
 		int status = run_command(test_binary, argv);
 		REQUIRE(WEXITSTATUS(status) == 1);
-		REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("Failed to load config file (process_mapnik_section): 'doesnotexist'"));
+		REQUIRE_THAT(err_log_lines, Catch::Matchers::ContainsSubstring("Failed to load config file (process_mapnik_section): 'doesnotexist'"));
 	}
 
 	SECTION("nonexistent renderd.conf file with valid active renderd section (process_map_sections)", "should return 1") {
@@ -577,6 +577,6 @@ TEST_CASE("renderd_config_test_helper", "specific testing")
 
 		int status = run_command(test_binary, argv);
 		REQUIRE(WEXITSTATUS(status) == 1);
-		REQUIRE_THAT(err_log_lines, Catch::Matchers::Contains("Failed to load config file (process_map_sections): 'doesnotexist'"));
+		REQUIRE_THAT(err_log_lines, Catch::Matchers::ContainsSubstring("Failed to load config file (process_map_sections): 'doesnotexist'"));
 	}
 }

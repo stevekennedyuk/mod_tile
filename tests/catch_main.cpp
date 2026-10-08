@@ -15,9 +15,12 @@
  * along with this program; If not, see http://www.gnu.org/licenses/.
  */
 
-#define CATCH_CONFIG_MAIN
-
-#include "catch/catch.hpp"
+#include "catch/catch_amalgamated.hpp"
 #include "catch_test_common.hpp"
 
 int foreground = 1;
+
+int main(int argc, char *argv[])
+{
+	return Catch::Session().run(argc, argv);
+}
