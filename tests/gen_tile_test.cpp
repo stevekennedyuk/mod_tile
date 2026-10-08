@@ -1449,9 +1449,9 @@ TEST_CASE("metatile", "Test metatile.cpp")
 
 TEST_CASE("protocol_helper", "Test protocol_helper.c")
 {
-	int block = 0, fd, found, ret;
+	int block = 0, fd = -1, found, ret;
 	std::string err_log_lines, out_log_lines;
-	struct protocol *cmd = (struct protocol *)malloc(sizeof(struct protocol));
+	struct protocol *cmd = (struct protocol *)calloc(1, sizeof(struct protocol));
 
 	cmd->x = 1024;
 	cmd->y = 1024;
