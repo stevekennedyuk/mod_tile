@@ -469,7 +469,7 @@ TEST_CASE("renderd_config config parser", "specific testing")
 	SECTION("renderd.conf with overlapping URIs", "should return 7") {
 		std::string map0_uri = GENERATE("/", "/map1/", "/map2/");
 
-		std::string renderd_conf = std::tmpnam(nullptr);
+		std::string renderd_conf = make_temp_file();
 		std::ofstream renderd_conf_file;
 		renderd_conf_file.open(renderd_conf);
 		renderd_conf_file << "[mapnik]\n[renderd]\n";
@@ -490,7 +490,7 @@ TEST_CASE("renderd_config config parser", "specific testing")
 	}
 
 	SECTION("renderd.conf with blank URIs", "should return 7") {
-		std::string renderd_conf = std::tmpnam(nullptr);
+		std::string renderd_conf = make_temp_file();
 		std::ofstream renderd_conf_file;
 		renderd_conf_file.open(renderd_conf);
 		renderd_conf_file << "[mapnik]\n[renderd]\n";
