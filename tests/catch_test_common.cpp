@@ -18,6 +18,8 @@
 #include <glib.h>
 #include <iostream>
 #include <stdio.h>
+#include <cstring>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <unistd.h>
@@ -65,7 +67,8 @@ std::string read_stderr(int buffer_size)
 {
 	std::string buffer(buffer_size, '\0');
 	ssize_t len = read(captured_stderr.pipes[0], &buffer[0], buffer_size);
-	buffer.resize(len > 0 ? len : 0);
+	// Stop at the terminating zero written by get_captured_stderr()
+	buffer.resize(len > 0 ? strnlen(buffer.c_str(), len) : 0);
 	return buffer;
 }
 
@@ -80,7 +83,11 @@ void capture_stderr()
 
 	// Redirect stderr to a new pipe
 	int pipes[2];
-	pipe(pipes);
+
+	if (pipe(pipes) != 0) {
+		throw std::runtime_error("capture: pipe() failed");
+	}
+
 	dup2(pipes[1], fileno(stderr));
 
 	captured_stderr.temp_fd = temp_stderr;
@@ -91,7 +98,9 @@ void capture_stderr()
 std::string get_captured_stderr(bool print)
 {
 	// Terminate captured output with a zero
-	write(captured_stderr.pipes[1], "", 1);
+	if (write(captured_stderr.pipes[1], "", 1) != 1) {
+		throw std::runtime_error("capture: write() failed");
+	}
 
 	// Restore stderr
 	fflush(stderr);
@@ -111,7 +120,8 @@ std::string read_stdout(int buffer_size)
 {
 	std::string buffer(buffer_size, '\0');
 	ssize_t len = read(captured_stdout.pipes[0], &buffer[0], buffer_size);
-	buffer.resize(len > 0 ? len : 0);
+	// Stop at the terminating zero written by get_captured_stdout()
+	buffer.resize(len > 0 ? strnlen(buffer.c_str(), len) : 0);
 	return buffer;
 }
 
@@ -126,7 +136,11 @@ void capture_stdout()
 
 	// Redirect stdout to a new pipe
 	int pipes[2];
-	pipe(pipes);
+
+	if (pipe(pipes) != 0) {
+		throw std::runtime_error("capture: pipe() failed");
+	}
+
 	dup2(pipes[1], fileno(stdout));
 
 	captured_stdout.temp_fd = temp_stdout;
@@ -137,7 +151,9 @@ void capture_stdout()
 std::string get_captured_stdout(bool print)
 {
 	// Terminate captured output with a zero
-	write(captured_stdout.pipes[1], "", 1);
+	if (write(captured_stdout.pipes[1], "", 1) != 1) {
+		throw std::runtime_error("capture: write() failed");
+	}
 
 	// Restore stdout
 	fflush(stdout);
