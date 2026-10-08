@@ -15,10 +15,11 @@
  * along with this program; If not, see http://www.gnu.org/licenses/.
  */
 
-// https://github.com/catchorg/Catch2/blob/v2.13.9/docs/own-main.md#let-catch2-take-full-control-of-args-and-config
-#define CATCH_CONFIG_RUNNER
+// This test binary provides its own main() (see bottom of file):
+// https://github.com/catchorg/Catch2/blob/v3.16.0/docs/own-main.md
 
 #include <cstdio>
+#include <fstream>
 #include <glib.h>
 #include <mapnik/version.hpp>
 #include <math.h>
@@ -41,7 +42,7 @@
 #include <mapnik/box2d.hpp>
 #endif
 
-#include "catch/catch.hpp"
+#include "catch/catch_amalgamated.hpp"
 #include "catch_test_common.hpp"
 #include "config.h"
 #include "g_logger.h"
@@ -583,7 +584,7 @@ TEST_CASE("renderd", "tile generation")
 
 	SECTION("rx_request/bad", "should return cmdNotDone") {
 		int pipefd[2];
-		pipe(pipefd);
+		REQUIRE(pipe(pipefd) == 0);
 		struct protocol *req = (struct protocol *)malloc(sizeof(struct protocol));
 		std::string expected_mimetype = "image/png", expected_options = "", expected_xmlname = "default";
 
@@ -1003,7 +1004,6 @@ TEST_CASE("memcached storage-backend", "MemcacheD Tile storage backend")
 {
 	int found;
 	std::string err_log_lines, out_log_lines;
-	struct storage_backend *store = NULL;
 
 #ifdef HAVE_LIBMEMCACHED
 	SECTION("memcached storage/initialise", "should not return NULL") {
@@ -1193,7 +1193,6 @@ TEST_CASE("rados storage-backend", "RADOS Tile storage backend")
 	SECTION("storage/initialise", "should return NULL") {
 		int found;
 		std::string err_log_lines, out_log_lines;
-		struct storage_backend *store = NULL;
 
 		start_capture();
 		REQUIRE(init_storage_backend("rados://") == NULL);
@@ -1210,12 +1209,11 @@ TEST_CASE("rados storage-backend", "RADOS Tile storage backend")
 
 TEST_CASE("ro_composite storage-backend", "RO Composite Tile storage backend")
 {
-	int found;
-	std::string err_log_lines, out_log_lines;
-	struct storage_backend *store = NULL;
-
 #ifndef HAVE_CAIRO
 	SECTION("storage/initialise", "should return NULL") {
+		int found;
+		std::string err_log_lines, out_log_lines;
+
 		start_capture();
 		REQUIRE(init_storage_backend("composite:{") == NULL);
 		std::tie(err_log_lines, out_log_lines) = end_capture();
@@ -1229,10 +1227,6 @@ TEST_CASE("ro_composite storage-backend", "RO Composite Tile storage backend")
 
 TEST_CASE("ro_http_proxy storage-backend", "RO HTTP Proxy Tile storage backend")
 {
-	int found;
-	std::string err_log_lines, out_log_lines;
-	struct storage_backend *store = NULL;
-
 #ifdef HAVE_LIBCURL
 	SECTION("storage/initialise", "should return 1") {
 		struct storage_backend *store = NULL;
@@ -1245,6 +1239,9 @@ TEST_CASE("ro_http_proxy storage-backend", "RO HTTP Proxy Tile storage backend")
 
 #else
 	SECTION("storage/initialise", "should return NULL") {
+		int found;
+		std::string err_log_lines, out_log_lines;
+
 		start_capture();
 		REQUIRE(init_storage_backend("ro_http_proxy://") == NULL);
 		std::tie(err_log_lines, out_log_lines) = end_capture();
@@ -1366,7 +1363,7 @@ TEST_CASE("g_logger", "Test g_logger.c")
 		std::string message = expected_output + " FOREGROUND TEST";
 		start_capture();
 		foreground = 1;
-		g_logger(log_level, message.c_str());
+		g_logger(log_level, "%s", message.c_str());
 		std::tie(err_log_lines, out_log_lines) = end_capture();
 		foreground = 0;
 
@@ -1400,7 +1397,7 @@ TEST_CASE("g_logger", "Test g_logger.c")
 	SECTION("g_logger foreground debug: " + expected_output, "should log the expected string") {
 		std::string message = expected_output + " FOREGROUND DEBUG TEST";
 		start_capture(1);
-		g_logger(log_level, message.c_str());
+		g_logger(log_level, "%s", message.c_str());
 		std::tie(err_log_lines, out_log_lines) = end_capture();
 
 		found_err = err_log_lines.find(message);
@@ -1448,9 +1445,9 @@ TEST_CASE("metatile", "Test metatile.cpp")
 
 TEST_CASE("protocol_helper", "Test protocol_helper.c")
 {
-	int block = 0, fd, found, ret;
+	int block = 0, fd = -1, found, ret;
 	std::string err_log_lines, out_log_lines;
-	struct protocol *cmd = (struct protocol *)malloc(sizeof(struct protocol));
+	struct protocol *cmd = (struct protocol *)calloc(1, sizeof(struct protocol));
 
 	cmd->x = 1024;
 	cmd->y = 1024;

@@ -5,12 +5,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 
 **mod_tile** is a high-performance tile serving system with two components:
+
 - **mod_tile**: Apache 2 HTTP module that serves map tiles
 - **renderd**: Daemon that renders tiles using Mapnik
 
 ## Build System
 
-CMake is the primary build system (Autotools is the alternative). The project requires C99 and C++11 (C++17 for Mapnik 4+).
+CMake is the primary build system; Autotools still works but is deprecated (`configure.ac` reads the version from `CMakeLists.txt`). The project requires C99 and C++14 (C++17 for Mapnik 4+).
 
 ### Ubuntu dependencies
 
@@ -21,7 +22,17 @@ sudo apt --no-install-recommends --yes install \
   libiniparser-dev libmapnik-dev libmemcached-dev librados-dev
 ```
 
-### CMake Build (recommended)
+### CMake Presets (quickest)
+
+```sh
+cmake --preset dev && cmake --build --preset dev && ctest --preset dev   # Debug + tests + warnings
+cmake --preset asan && cmake --build --preset asan && ctest --preset asan  # ASan + UBSan
+cmake --preset tsan && cmake --build --preset tsan && ctest --preset tsan  # ThreadSanitizer (unit tests only)
+```
+
+Presets build into `build/<preset>/`. `config.h` is generated in the build tree (`<build>/includes/config.h`), so multiple build directories can coexist.
+
+### CMake Build (manual)
 
 ```sh
 export CMAKE_BUILD_PARALLEL_LEVEL=$(nproc)
@@ -57,18 +68,28 @@ sudo make install
 
 ### Key CMake Options
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `ENABLE_TESTS` | OFF | Build test suite (Catch2) |
-| `USE_CAIRO` | ON | Cairo composite backend |
-| `USE_CURL` | ON | HTTP proxy storage backend |
-| `USE_MEMCACHED` | ON | Memcached storage backend |
-| `USE_RADOS` | ON | Ceph RADOS storage backend |
-| `MALLOC_LIB` | libc | Memory allocator: libc/jemalloc/mimalloc/tcmalloc |
+| Option                                       | Default | Description                                                                                            |
+| -------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------ |
+| `ENABLE_TESTS`                               | OFF     | Build test suite (Catch2)                                                                              |
+| `USE_CAIRO`                                  | ON      | Cairo composite backend                                                                                |
+| `USE_CURL`                                   | ON      | HTTP proxy storage backend                                                                             |
+| `USE_MEMCACHED`                              | ON      | Memcached storage backend                                                                              |
+| `USE_RADOS`                                  | ON      | Ceph RADOS storage backend                                                                             |
+| `MALLOC_LIB`                                 | libc    | Memory allocator: libc/jemalloc/mimalloc/tcmalloc                                                      |
+| `ENABLE_WARNINGS`                            | OFF     | `-Wall -Wextra` (unused-parameter suppressed)                                                          |
+| `ENABLE_WERROR`                              | OFF     | `-Werror` (with `ENABLE_WARNINGS`)                                                                     |
+| `ENABLE_SANITIZERS`                          | ""      | e.g. `address,undefined` or `thread`                                                                   |
+| `TILE_LOAD_DIRECTORY` / `TILE_LOAD_FILENAME` | auto    | Override the distro auto-detection of where the Apache `tile.load` goes (for packaging / cross builds) |
+
+Shared sources are compiled once into internal OBJECT libraries in `src/CMakeLists.txt` (`common_objs`, `config_objs`, `protocol_objs`, `submit_queue_objs`, `store_objs`, `store_file_utils_objs`, `renderd_core_objs`) and reused by every target. `renderd.c` is the exception: `gen_tile_test` recompiles it with `MAIN_ALREADY_DEFINED`.
 
 ### Linting / Static Analysis
 
-CI runs `flawfinder` for security scanning (`.github/workflows/flawfinder-analysis.yml`) and a lint workflow (`.github/workflows/lint.yml`).
+CI runs `flawfinder` for security scanning (`.github/workflows/flawfinder-analysis.yml`), a lint workflow (`.github/workflows/lint.yml`: astyle, cmakelint, prettier) and `.github/workflows/sanitizers-and-warnings.yml`:
+
+- **Warnings** — GCC and Clang with `ENABLE_WARNINGS` + `ENABLE_WERROR`; the code base builds warning-free, keep it that way. `g_logger()` is declared with `G_GNUC_PRINTF`, so format/argument mismatches are compile errors.
+- **ASan + UBSan** — full suite including the Apache/renderd integration tests. `tests/CMakeLists.txt` puts the ASan runtime in `LD_PRELOAD` so the system `httpd` can load the instrumented `mod_tile.so`. Services write sanitizer reports to `build/tests/logs`, which the job also checks.
+- **TSan** — unit test executables only (TSan cannot be preloaded into an uninstrumented `httpd`). `tests/tsan.supp` suppresses a lock-order report inside GDAL.
 
 ## Architecture
 
@@ -95,6 +116,7 @@ HTTP Client → mod_tile (Apache module)
 **`src/renderd_config.c`** — Parses `renderd.conf` (INI format) into `renderd_config` / `xmlconfigitem` structs.
 
 **Storage backends** (pluggable via `includes/store.h` function-pointer interface):
+
 - `store_file.c` — filesystem (default), stores 8×8 metatiles
 - `store_memcached.c` — Memcached
 - `store_rados.c` — Ceph RADOS
@@ -119,7 +141,7 @@ Tiles are stored in 8×8 metatile bundles (`METATILE = 8`) in a hashed directory
 
 ## Tests
 
-Tests use **Catch2** (v2.13.9) and live in `tests/`. The main suites:
+Tests use **Catch2** (v3.16.0 amalgamated build, vendored in `tests/catch/`; see its README to update) and live in `tests/`. Matchers use the v3 names, e.g. `Catch::Matchers::ContainsSubstring`. The main suites:
 
 - `gen_tile_test.cpp` — Mapnik rendering pipeline (largest suite)
 - `renderd_config_test.cpp` — configuration parsing
@@ -132,10 +154,11 @@ Test infrastructure uses `tests/httpd.conf.in` and `tests/renderd.conf.in` templ
 ## Known Issues / Technical Debt
 
 - **`src/request_queue.c:request_queue_close`** — queued render items are not freed on shutdown (items in all five priority lists leak). The TODO comment is present in the source. Safe in practice because renderd only shuts down at process exit, but should be fixed for clean valgrind runs.
-- **`src/store_ro_http_proxy.c:strcpy` at line 165** — `xmlconfig` is copied into `ctx->cache.xmlname[XMLCONFIG_MAX]` (41 bytes) without a prior length check. The caller is the storage backend interface which in practice receives validated xmlconfig names, but the copy is not bounds-safe.
 - **`src/renderd.c` / `src/mod_tile.c` — `bzero` usage** — several files use the deprecated `bzero()` instead of `memset(..., 0, ...)`. Functionally equivalent on Linux but not strictly portable.
 - **`src/gen_tile.cpp:render_thread` — startup `strndup`/`malloc` leaks** — `output_format`, `xmlfile`, `xmlname` (`strndup`), `prj` (`malloc`), and `store` (`init_storage_backend`) are allocated once per thread at startup and never freed. The render thread runs in an infinite loop and never exits, so these do not accumulate in practice.
 - **`src/store_ro_composite.c` — `connection_string_secondary` (strdup) not freed on late error paths** — after the `strdup` on the secondary connection string, several subsequent error paths (store_primary init failure, store_secondary init failure) free it, but if `store_secondary` init succeeds and a later step fails the pointer may still leak depending on the code path. Low risk: composite storage is rarely used and init failures abort the process.
+- **`src/renderd.c` TCP listener binds the wildcard address** — it listens on all addresses (dual-stack IPv6, falling back to IPv4 when IPv6 is unavailable) regardless of `iphostname`, which clients use to connect. Binding to `iphostname` would be a behaviour change for existing configs.
+- **Process-lifetime allocations** — LeakSanitizer reports small one-shot leaks at exit in `init_storage_*` and the `render_*` utilities' `main()`; harmless but noisy. Run the asan preset with `detect_leaks=0` (the test preset does this).
 
 ## Parameterized rendering cache
 
