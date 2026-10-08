@@ -1230,6 +1230,20 @@ endforeach()
 
 #-----------------------------------------------------------------------------
 #
+#  catch2_o (vendored Catch2 v3 implementation, compiled once)
+#
+#-----------------------------------------------------------------------------
+
+add_library(catch2_o OBJECT
+  ${PROJECT_SOURCE_DIR}/tests/catch/catch_amalgamated.cpp
+)
+# All test binaries provide their own main() (catch_main.cpp or gen_tile_test.cpp)
+target_compile_definitions(catch2_o PUBLIC CATCH_AMALGAMATED_CUSTOM_MAIN)
+# Third-party code: do not apply the project's warning flags to it
+target_compile_options(catch2_o PRIVATE -w)
+
+#-----------------------------------------------------------------------------
+#
 #  catch_main_o
 #
 #-----------------------------------------------------------------------------
@@ -1291,6 +1305,7 @@ link_libraries(${GLIB_LIBRARIES})
 
 add_executable(render_expired_test
   $<TARGET_OBJECTS:catch_main_o>
+  $<TARGET_OBJECTS:catch2_o>
   render_expired_test.cpp
 )
 
@@ -1302,6 +1317,7 @@ add_executable(render_expired_test
 
 add_executable(render_list_test
   $<TARGET_OBJECTS:catch_main_o>
+  $<TARGET_OBJECTS:catch2_o>
   render_list_test.cpp
 )
 
@@ -1313,6 +1329,7 @@ add_executable(render_list_test
 
 add_executable(render_old_test
   $<TARGET_OBJECTS:catch_main_o>
+  $<TARGET_OBJECTS:catch2_o>
   render_old_test.cpp
 )
 
@@ -1324,6 +1341,7 @@ add_executable(render_old_test
 
 add_executable(render_speedtest_test
   $<TARGET_OBJECTS:catch_main_o>
+  $<TARGET_OBJECTS:catch2_o>
   render_speedtest_test.cpp
 )
 
@@ -1335,6 +1353,7 @@ add_executable(render_speedtest_test
 
 add_executable(renderd_test
   $<TARGET_OBJECTS:catch_main_o>
+  $<TARGET_OBJECTS:catch2_o>
   renderd_test.cpp
 )
 
@@ -1346,6 +1365,7 @@ add_executable(renderd_test
 
 add_executable(renderd_config_test
   $<TARGET_OBJECTS:catch_main_o>
+  $<TARGET_OBJECTS:catch2_o>
   renderd_config_test.cpp
 )
 
