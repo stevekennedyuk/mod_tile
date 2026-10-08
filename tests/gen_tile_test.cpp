@@ -1003,7 +1003,6 @@ TEST_CASE("memcached storage-backend", "MemcacheD Tile storage backend")
 {
 	int found;
 	std::string err_log_lines, out_log_lines;
-	struct storage_backend *store = NULL;
 
 #ifdef HAVE_LIBMEMCACHED
 	SECTION("memcached storage/initialise", "should not return NULL") {
@@ -1193,7 +1192,6 @@ TEST_CASE("rados storage-backend", "RADOS Tile storage backend")
 	SECTION("storage/initialise", "should return NULL") {
 		int found;
 		std::string err_log_lines, out_log_lines;
-		struct storage_backend *store = NULL;
 
 		start_capture();
 		REQUIRE(init_storage_backend("rados://") == NULL);
@@ -1210,12 +1208,11 @@ TEST_CASE("rados storage-backend", "RADOS Tile storage backend")
 
 TEST_CASE("ro_composite storage-backend", "RO Composite Tile storage backend")
 {
-	int found;
-	std::string err_log_lines, out_log_lines;
-	struct storage_backend *store = NULL;
-
 #ifndef HAVE_CAIRO
 	SECTION("storage/initialise", "should return NULL") {
+		int found;
+		std::string err_log_lines, out_log_lines;
+
 		start_capture();
 		REQUIRE(init_storage_backend("composite:{") == NULL);
 		std::tie(err_log_lines, out_log_lines) = end_capture();
@@ -1229,10 +1226,6 @@ TEST_CASE("ro_composite storage-backend", "RO Composite Tile storage backend")
 
 TEST_CASE("ro_http_proxy storage-backend", "RO HTTP Proxy Tile storage backend")
 {
-	int found;
-	std::string err_log_lines, out_log_lines;
-	struct storage_backend *store = NULL;
-
 #ifdef HAVE_LIBCURL
 	SECTION("storage/initialise", "should return 1") {
 		struct storage_backend *store = NULL;
@@ -1245,6 +1238,9 @@ TEST_CASE("ro_http_proxy storage-backend", "RO HTTP Proxy Tile storage backend")
 
 #else
 	SECTION("storage/initialise", "should return NULL") {
+		int found;
+		std::string err_log_lines, out_log_lines;
+
 		start_capture();
 		REQUIRE(init_storage_backend("ro_http_proxy://") == NULL);
 		std::tie(err_log_lines, out_log_lines) = end_capture();
@@ -1366,7 +1362,7 @@ TEST_CASE("g_logger", "Test g_logger.c")
 		std::string message = expected_output + " FOREGROUND TEST";
 		start_capture();
 		foreground = 1;
-		g_logger(log_level, message.c_str());
+		g_logger(log_level, "%s", message.c_str());
 		std::tie(err_log_lines, out_log_lines) = end_capture();
 		foreground = 0;
 
@@ -1400,7 +1396,7 @@ TEST_CASE("g_logger", "Test g_logger.c")
 	SECTION("g_logger foreground debug: " + expected_output, "should log the expected string") {
 		std::string message = expected_output + " FOREGROUND DEBUG TEST";
 		start_capture(1);
-		g_logger(log_level, message.c_str());
+		g_logger(log_level, "%s", message.c_str());
 		std::tie(err_log_lines, out_log_lines) = end_capture();
 
 		found_err = err_log_lines.find(message);
