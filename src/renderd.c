@@ -174,7 +174,10 @@ void request_exit(void)
 	// This function is called from a signal handler, so only async-signal-safe
 	// functions (write(2)) may be used here — no g_logger, no strerror.
 	char c = 0;
-	(void)write(exit_pipe_fd, &c, sizeof(c));
+	// Nothing useful can be done on failure here; assign to discard (GCC ignores a (void) cast
+	// for functions declared warn_unused_result)
+	ssize_t ignored = write(exit_pipe_fd, &c, sizeof(c));
+	(void)ignored;
 }
 
 void process_loop(int listen_fd)
@@ -382,7 +385,7 @@ void *stats_writeout_thread(void * arg)
 
 int client_socket_init(renderd_config * sConfig)
 {
-	int fd, s;
+	int fd = -1, s;
 	struct sockaddr_un * addrU;
 	struct addrinfo hints;
 	struct addrinfo *result, *rp;
