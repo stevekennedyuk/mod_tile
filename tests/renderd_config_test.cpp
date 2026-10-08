@@ -15,9 +15,11 @@
  * along with this program; If not, see http://www.gnu.org/licenses/.
  */
 
+#include <cstdlib>
 #include <fstream>
 #include <string>
 #include <sys/un.h>
+#include <unistd.h>
 
 #include "catch/catch.hpp"
 #include "catch_test_common.hpp"
@@ -39,6 +41,16 @@
 
 // Only render_list uses all functions in renderd_config.c
 std::string test_binary = (std::string)PROJECT_BINARY_DIR + "/" + "render_list";
+
+// Securely create an empty temporary file and return its name (replaces racy std::tmpnam)
+static std::string make_temp_file()
+{
+	std::string name = (std::string)P_tmpdir + "/renderd_config_test_XXXXXX";
+	int fd = mkstemp(&name[0]);
+	REQUIRE(fd != -1);
+	close(fd);
+	return name;
+}
 extern std::string err_log_lines;
 
 TEST_CASE("renderd_config min/max int", "min/max int generator testing")
@@ -185,7 +197,7 @@ TEST_CASE("renderd_config min/max double lon generator", "min/max double generat
 TEST_CASE("renderd_config config parser", "specific testing")
 {
 	SECTION("renderd.conf with too many map sections", "should return 7") {
-		std::string renderd_conf = std::tmpnam(nullptr);
+		std::string renderd_conf = make_temp_file();
 		std::ofstream renderd_conf_file;
 		renderd_conf_file.open(renderd_conf);
 		renderd_conf_file << "[mapnik]\n[renderd]\n";
@@ -205,7 +217,7 @@ TEST_CASE("renderd_config config parser", "specific testing")
 	}
 
 	SECTION("renderd.conf without map sections", "should return 1") {
-		std::string renderd_conf = std::tmpnam(nullptr);
+		std::string renderd_conf = make_temp_file();
 		std::ofstream renderd_conf_file;
 		renderd_conf_file.open(renderd_conf);
 		renderd_conf_file << "[mapnik]\n[renderd]\n";
@@ -220,7 +232,7 @@ TEST_CASE("renderd_config config parser", "specific testing")
 	}
 
 	SECTION("renderd.conf without mapnik section", "should return 1") {
-		std::string renderd_conf = std::tmpnam(nullptr);
+		std::string renderd_conf = make_temp_file();
 		std::ofstream renderd_conf_file;
 		renderd_conf_file.open(renderd_conf);
 		renderd_conf_file << "[map]\n[renderd]\n";
@@ -237,7 +249,7 @@ TEST_CASE("renderd_config config parser", "specific testing")
 	SECTION("renderd.conf with invalid renderd sections", "should return 7") {
 		std::string renderd_conf_renderd_section_name = "renderdinvalid";
 
-		std::string renderd_conf = std::tmpnam(nullptr);
+		std::string renderd_conf = make_temp_file();
 		std::ofstream renderd_conf_file;
 		renderd_conf_file.open(renderd_conf);
 		renderd_conf_file << "[mapnik]\n[map]\n[" + renderd_conf_renderd_section_name + "]\n";
@@ -252,7 +264,7 @@ TEST_CASE("renderd_config config parser", "specific testing")
 	}
 
 	SECTION("renderd.conf with too many renderd sections", "should return 7") {
-		std::string renderd_conf = std::tmpnam(nullptr);
+		std::string renderd_conf = make_temp_file();
 		std::ofstream renderd_conf_file;
 		renderd_conf_file.open(renderd_conf);
 		renderd_conf_file << "[mapnik]\n[map]\n";
@@ -272,7 +284,7 @@ TEST_CASE("renderd_config config parser", "specific testing")
 	}
 
 	SECTION("renderd.conf without renderd sections", "should return 1") {
-		std::string renderd_conf = std::tmpnam(nullptr);
+		std::string renderd_conf = make_temp_file();
 		std::ofstream renderd_conf_file;
 		renderd_conf_file.open(renderd_conf);
 		renderd_conf_file << "[map]\n[mapnik]\n";
@@ -287,7 +299,7 @@ TEST_CASE("renderd_config config parser", "specific testing")
 	}
 
 	SECTION("renderd.conf map section scale too small", "should return 7") {
-		std::string renderd_conf = std::tmpnam(nullptr);
+		std::string renderd_conf = make_temp_file();
 		std::ofstream renderd_conf_file;
 		renderd_conf_file.open(renderd_conf);
 		renderd_conf_file << "[mapnik]\n[renderd]\n";
@@ -303,7 +315,7 @@ TEST_CASE("renderd_config config parser", "specific testing")
 	}
 
 	SECTION("renderd.conf map section scale too large", "should return 7") {
-		std::string renderd_conf = std::tmpnam(nullptr);
+		std::string renderd_conf = make_temp_file();
 		std::ofstream renderd_conf_file;
 		renderd_conf_file.open(renderd_conf);
 		renderd_conf_file << "[mapnik]\n[renderd]\n";
@@ -319,7 +331,7 @@ TEST_CASE("renderd_config config parser", "specific testing")
 	}
 
 	SECTION("renderd.conf map section maxzoom too small", "should return 7") {
-		std::string renderd_conf = std::tmpnam(nullptr);
+		std::string renderd_conf = make_temp_file();
 		std::ofstream renderd_conf_file;
 		renderd_conf_file.open(renderd_conf);
 		renderd_conf_file << "[mapnik]\n[renderd]\n";
@@ -335,7 +347,7 @@ TEST_CASE("renderd_config config parser", "specific testing")
 	}
 
 	SECTION("renderd.conf map section maxzoom too large", "should return 7") {
-		std::string renderd_conf = std::tmpnam(nullptr);
+		std::string renderd_conf = make_temp_file();
 		std::ofstream renderd_conf_file;
 		renderd_conf_file.open(renderd_conf);
 		renderd_conf_file << "[mapnik]\n[renderd]\n";
@@ -351,7 +363,7 @@ TEST_CASE("renderd_config config parser", "specific testing")
 	}
 
 	SECTION("renderd.conf map section minzoom too small", "should return 7") {
-		std::string renderd_conf = std::tmpnam(nullptr);
+		std::string renderd_conf = make_temp_file();
 		std::ofstream renderd_conf_file;
 		renderd_conf_file.open(renderd_conf);
 		renderd_conf_file << "[mapnik]\n[renderd]\n";
@@ -367,7 +379,7 @@ TEST_CASE("renderd_config config parser", "specific testing")
 	}
 
 	SECTION("renderd.conf map section minzoom too large", "should return 7") {
-		std::string renderd_conf = std::tmpnam(nullptr);
+		std::string renderd_conf = make_temp_file();
 		std::ofstream renderd_conf_file;
 		renderd_conf_file.open(renderd_conf);
 		renderd_conf_file << "[mapnik]\n[renderd]\n";
@@ -385,7 +397,7 @@ TEST_CASE("renderd_config config parser", "specific testing")
 	SECTION("renderd.conf map section type has too few parts", "should return 7") {
 		std::string renderd_conf_map_type = "a";
 
-		std::string renderd_conf = std::tmpnam(nullptr);
+		std::string renderd_conf = make_temp_file();
 		std::ofstream renderd_conf_file;
 		renderd_conf_file.open(renderd_conf);
 		renderd_conf_file << "[mapnik]\n[renderd]\n";
@@ -403,7 +415,7 @@ TEST_CASE("renderd_config config parser", "specific testing")
 	SECTION("renderd.conf map section type has too many parts", "should return 7") {
 		std::string renderd_conf_map_type = "a b c d";
 
-		std::string renderd_conf = std::tmpnam(nullptr);
+		std::string renderd_conf = make_temp_file();
 		std::ofstream renderd_conf_file;
 		renderd_conf_file.open(renderd_conf);
 		renderd_conf_file << "[mapnik]\n[renderd]\n";
@@ -422,7 +434,7 @@ TEST_CASE("renderd_config config parser", "specific testing")
 		int renderd_socketname_maxlen = sizeof(((struct sockaddr_un *)0)->sun_path);
 		std::string renderd_socketname = "/" + std::string(renderd_socketname_maxlen, 'A');
 
-		std::string renderd_conf = std::tmpnam(nullptr);
+		std::string renderd_conf = make_temp_file();
 		std::ofstream renderd_conf_file;
 		renderd_conf_file.open(renderd_conf);
 		renderd_conf_file << "[mapnik]\n[map]\n";
@@ -438,7 +450,7 @@ TEST_CASE("renderd_config config parser", "specific testing")
 	}
 
 	SECTION("renderd.conf duplicate renderd section names", "should return 7") {
-		std::string renderd_conf = std::tmpnam(nullptr);
+		std::string renderd_conf = make_temp_file();
 		std::ofstream renderd_conf_file;
 		renderd_conf_file.open(renderd_conf);
 		renderd_conf_file << "[mapnik]\n[map]\n";

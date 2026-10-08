@@ -78,7 +78,7 @@ static void check_load(void)
 
 	while (avg >= maxLoad) {
 		int seconds = 5;
-		g_logger(G_LOG_LEVEL_DEBUG, "Load average %d, sleeping %is", avg, seconds);
+		g_logger(G_LOG_LEVEL_DEBUG, "Load average %.2f, sleeping %is", avg, seconds);
 		sleep(seconds);
 		avg = get_load_avg();
 	}
@@ -260,7 +260,7 @@ int make_connection(const char *spath)
 		u_int16_t port = RENDERD_PORT;
 		char port_s[6];
 		size_t spath_len = strlen(spath);
-		size_t hostname_len = d ? d - spath : spath_len;
+		size_t hostname_len = d ? (size_t)(d - spath) : spath_len;
 
 		if (!hostname_len) {
 			hostname = strdup(RENDERD_HOST);
